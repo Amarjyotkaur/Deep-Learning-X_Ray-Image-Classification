@@ -128,7 +128,7 @@ def train_model(model,train_loader,validation_loader,epochs,loss_function):
     for epoch in range(epochs):
         model.train()
         for batch_idx, (images_data, target_labels) in enumerate(train_loader):
-            print(batch_idx, '----------------------')
+            # print(batch_idx, '----------------------')
             target_idx_labels=torch.max(target_labels,1)[1]
             # print("image data ",images_data)
             outputs=model(images_data)
@@ -137,7 +137,7 @@ def train_model(model,train_loader,validation_loader,epochs,loss_function):
             train_loss_list.append(loss.item())
             accuracy=calculate_accuracy(outputs,target_labels)
             train_accuracy_list.append(accuracy)
-            print(train_accuracy_list)
+            # print(train_accuracy_list)
             # print("loss ", training_loss_list)
 
             optimizer.zero_grad()
