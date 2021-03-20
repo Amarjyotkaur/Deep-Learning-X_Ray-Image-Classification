@@ -5,7 +5,14 @@ import torch.optim as optim
 import time
 import datetime
 
+from small_functions import *
+
 class Block(nn.Module):
+    '''
+    A neural convolutional block that has two big layers, 
+    each big layer has one convolutional layer, bath normalisation and an activation funtion ReLU().
+    A drop out layer as the last layer of this block.
+    '''
     def __init__(self,in_channel,out_channel,dropout_rate):
         super(Block,self).__init__()
         self.layer1=nn.Sequential(
@@ -31,21 +38,29 @@ class Block(nn.Module):
 
 
 class Classifier(nn.Module):
+    '''
+    Three classes classifier
+    convolutional layer + fully connected layer + drop out + log softmax layer
+
+    history: record the accuracy and loss of training set and validation set
+    
+    Output log(probabilities of classifying images to each class) values.
+    '''
     def __init__(self):
         super(Classifier,self).__init__()
         self.conv1=nn.Sequential(
-            nn.Conv2d(1,16,kernel_size=5),
+            nn.Conv2d(1,32,kernel_size=5),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=3,stride=2)
         )
 
-        # self.blk1=Block(16,8,0.5)
+        # self.blk1=Block(32,16,0.2)
         # self.blk2=Block(64,128,0.2)
         # self.blk3=Block(128,256,0.2)
         # self.blk4=Block(256,512,0.2)
 
         # self.avgpool=nn.AvgPool2d(kernel_size=3,stride=1,padding=1)
-        self.fc1=nn.Linear(16*72*72,3)
+        self.fc1=nn.Linear(32*72*72,3)
         self.drop=nn.Dropout(0.5)
         # self.fc2=nn.Linear(256,3)
         self.fl=nn.LogSoftmax(dim=1)
@@ -70,9 +85,18 @@ class Classifier(nn.Module):
         return out
 
 def calculate_accuracy(predicted_labels,target_labels):
+    '''
+    Return the accuracy
+
+    predicted_labels: the predited values of images
+    target_labels: ground truth labels of images
+    '''
+
     maxProb_idx = torch.max(predicted_labels,1)[1]
     
+    # 
     equality = torch.eq(torch.max(target_labels,1)[1],maxProb_idx).float()
+    # print('maxprob',maxProb_idx)
     # print("equality  ",equality)
     accuracy = torch.mean(equality)
 
@@ -122,6 +146,7 @@ def train_model(model,train_loader,validation_loader,epochs,loss_function):
             loss.backward()
             optimizer.step()
 
+
             
 
             if (batch_idx+1)%10==0:
@@ -134,7 +159,7 @@ def train_model(model,train_loader,validation_loader,epochs,loss_function):
                 trainacc=sum(train_accuracy_list)/len(train_accuracy_list)
                 valacc=validation_accuracy/len(validation_loader)
 
-                print("Epoch: {}/{} @ {} ".format(epoch, epochs,str(datetime.datetime.now())),
+                print("Epoch: {}/{} @ {} ".format(epoch+1, epochs,str(datetime.datetime.now())),
                       "\n",
                       "Training Loss: {:.3f} - ".format(trainloss),
                       "Training Accuracy: {:.3f} - ".format(trainacc),
@@ -151,6 +176,10 @@ def train_model(model,train_loader,validation_loader,epochs,loss_function):
                 train_accuracy_list=[]
 
                 model.train()
+
+            # Save model as intermediate.pt regularly 
+            if batch_idx%40==0:
+                save_model(model,'./model/intermediate.pt')
 
 
     print("Training finished!","\n","Run time: {:.3f} mins".format((time.time() - start_time)/60))
