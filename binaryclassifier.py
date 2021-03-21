@@ -6,6 +6,9 @@ from torchvision import transforms
 
 import time
 import matplotlib.pyplot as plt
+import datetime
+
+from small_functions import *
 
 def calculate_accuracy(predicted_labels,target_labels):
     equality = torch.eq(target_labels,predicted_labels).float()
@@ -47,14 +50,6 @@ def validation(model, validation_loader, criterion,binaryclassifier=False,second
 
     return validation_loss, accuracy
 
-def plotfigure(acc_list,val_acc_list,losslst_train,losslst_val):
-    fig,axs=plt.subplots(2)
-    axs[0].plot(acc_list,label='train acc')
-    axs[0].plot(val_acc_list,label='val acc')
-    axs[1].plot(losslst_train,label='train loss')
-    axs[1].plot(losslst_val,label='val loss')
-    plt.legend()
-    plt.show()
 
 class Block(nn.Module):
     def __init__(self,in_channel,out_channel,dropout_rate):
@@ -93,6 +88,8 @@ class Classifier(nn.Module):
         self.drop=nn.Dropout(0.5)
         self.fl=nn.LogSoftmax(dim=1)
 
+        self.history={'train_accuracy':[],'train_loss':[],'validation_accuracy':[],'validation_loss':[]}
+
     def forward(self,x):
         out=self.conv1(x)
         # print("After conv1",out.shape)
@@ -122,6 +119,8 @@ class Classifier2(nn.Module):
         self.drop=nn.Dropout(0.5)
         self.fl=nn.LogSoftmax(dim=1)
 
+        self.history={'train_accuracy':[],'train_loss':[],'validation_accuracy':[],'validation_loss':[]}
+
     def forward(self,x):
         out=self.conv1(x)
         # print("After conv1",out.shape)
@@ -141,12 +140,6 @@ def train_binary_classifier_model1(train_loader,epochs,loss_function, gen,test_l
 
     train_loss_list=[]
     train_accuracy_list=[]
-
-    acc_list=[]
-    val_acc_list=[]
-
-    losslst_train=[]
-    losslst_val=[]
     
     first_classifier_output = []
     seed = 2809
@@ -188,23 +181,32 @@ def train_binary_classifier_model1(train_loader,epochs,loss_function, gen,test_l
                 with torch.no_grad():
                     validation_loss,validation_accuracy=validation(model,test_loader,criterion=loss_function, binaryclassifier=True)
 
-                print("Epoch: {}/{} @ {} ".format(epoch+1, epochs,time.time()),
+                trainloss=sum(train_loss_list)/len(train_loss_list)
+                valloss=validation_loss/len(test_loader)
+                trainacc=sum(train_accuracy_list)/len(train_accuracy_list)
+                valacc=validation_accuracy/len(test_loader)
+
+                print("Epoch: {}/{} @ {} ".format(epoch+1, epochs,str(datetime.datetime.now())),
                       "\n",
-                      "Training Loss: {:.3f} - ".format(sum(train_loss_list)/len(train_loss_list)),
-                      "Training Accuracy: {:.3f} - ".format(sum(train_accuracy_list)/len(train_accuracy_list)),
-                      "Validation Loss: {:.3f} - ".format(validation_loss/len(test_loader)),
-                      "Validation Accuracy: {:.3f}".format(validation_accuracy/len(test_loader)))
+                      "Training Loss: {:.3f} - ".format(trainloss),
+                      "Training Accuracy: {:.3f} - ".format(trainacc),
+                      "Validation Loss: {:.3f} - ".format(valloss),
+                      "Validation Accuracy: {:.3f}".format(valacc))
                 
-                acc_list.append(sum(train_accuracy_list)/len(train_accuracy_list))
-                val_acc_list.append(validation_accuracy/len(test_loader))
-                losslst_train.append(sum(train_loss_list)/len(train_loss_list))
-                losslst_val.append(validation_accuracy/len(test_loader))
+                model.history['train_accuracy'].append(trainacc)
+                model.history['validation_accuracy'].append(valacc)
+                model.history['train_loss'].append(trainloss)
+                model.history['validation_loss'].append(valloss)
 
                 train_loss_list=[]
                 train_accuracy_list=[]
 
                 model.train()
-    plotfigure(acc_list,val_acc_list,losslst_train,losslst_val)
+            
+            # Save model as binary1_intermediate.pt regularly 
+            if batch_idx%40==0:
+                save_model(model,'./model/binary1_intermediate.pt')
+    
 
     print("Training finished for the 1st classifier!","\n","Run time: {:.3f} mins".format((time.time() - start_time)/60))
     return model,first_classifier_output
@@ -217,12 +219,6 @@ def train_binary_classifier_model2(train_loader,epochs,loss_function,first_class
 
     train_loss_list=[]
     train_accuracy_list=[]
-
-    acc_list=[]
-    val_acc_list=[]
-
-    losslst_train=[]
-    losslst_val=[]
 
     start_time=time.time()
     seed = 2809
@@ -265,24 +261,33 @@ def train_binary_classifier_model2(train_loader,epochs,loss_function,first_class
                 with torch.no_grad():
                     validation_loss,validation_accuracy=validation(model,test_loader,criterion=loss_function,secondclassifier=True)
 
-                print("Epoch: {}/{} @ {} ".format(epoch+1, epochs,time.time()),
-                      "\n",
-                      "Training Loss: {:.3f} - ".format(sum(train_loss_list)/len(train_loss_list)),
-                      "Training Accuracy: {:.3f} - ".format(sum(train_accuracy_list)/len(train_accuracy_list)),
-                      "Validation Loss: {:.3f} - ".format(validation_loss/len(test_loader)),
-                      "Validation Accuracy: {:.3f}".format(validation_accuracy/len(test_loader)))
+                trainloss=sum(train_loss_list)/len(train_loss_list)
+                valloss=validation_loss/len(test_loader)
+                trainacc=sum(train_accuracy_list)/len(train_accuracy_list)
+                valacc=validation_accuracy/len(test_loader)
                 
-                acc_list.append(sum(train_accuracy_list)/len(train_accuracy_list))
-                val_acc_list.append(validation_accuracy/len(test_loader))
-                losslst_train.append(sum(train_loss_list)/len(train_loss_list))
-                losslst_val.append(validation_accuracy/len(test_loader))
+                print("Epoch: {}/{} @ {} ".format(epoch+1, epochs,str(datetime.datetime.now())),
+                      "\n",
+                      "Training Loss: {:.3f} - ".format(trainloss),
+                      "Training Accuracy: {:.3f} - ".format(trainacc),
+                      "Validation Loss: {:.3f} - ".format(valloss),
+                      "Validation Accuracy: {:.3f}".format(valacc))
+                
+                model.history['train_accuracy'].append(trainacc)
+                model.history['validation_accuracy'].append(valacc)
+                model.history['train_loss'].append(trainloss)
+                model.history['validation_loss'].append(valloss)
 
                 
                 train_loss_list=[]
                 train_accuracy_list=[]
 
                 model.train()
-    plotfigure(acc_list,val_acc_list,losslst_train,losslst_val)
+
+            # Save model as binary1_intermediate.pt regularly 
+            if batch_idx%40==0:
+                save_model(model,'./model/binary2_intermediate.pt')
+    
 
     print("Training finished for 2nd classifier!","\n","Run time: {:.3f} mins".format((time.time() - start_time)/60))
     return model
