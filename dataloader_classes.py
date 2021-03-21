@@ -432,13 +432,22 @@ def dataset_bar(ld_train,ld_val,ld_test):
     x2 = [r + width for r in x]
     x3 = [r + width for r in x2]
     fig,ax = plt.subplots()
-    normal_rect = ax.bar(x, [trainval[0],valval[0],testval[0]], width=width, label='Normal')
-    noncovid_rect = ax.bar(x2, [trainval[1],valval[1],testval[1]], width=width, label='Infected (non-covid)')
-    covid_rect = ax.bar(x3, [trainval[2],valval[2],testval[2]], width=width, label='Infected (covid)')
+    normal = [trainval[0],valval[0],testval[0]]
+    noncovid = [trainval[1],valval[1],testval[1]]
+    covid = [trainval[2],valval[2],testval[2]]
+    normal_rect = ax.bar(x, normal, width=width, label='Normal')
+    noncovid_rect = ax.bar(x2, noncovid, width=width, label='Infected (non-covid)')
+    covid_rect = ax.bar(x3, covid, width=width, label='Infected (covid)')
 
     ax.set_ylabel('number of images')
     ax.set_title('number of images by set and label')
     ax.set_xticks(x2)
     ax.set_xticklabels(labels)
     ax.legend()
+    for i, v in enumerate(normal):
+        ax.text(i-0.1, v+5,str(v), color='black')
+    for i, v in enumerate(noncovid):
+        ax.text(i+0.25, v+5,str(v), color='black')
+    for i, v in enumerate(covid):
+        ax.text(i+0.5, v+5,str(v), color='black')
     plt.show()
