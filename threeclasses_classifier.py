@@ -5,7 +5,7 @@ import torch.optim as optim
 import time
 import datetime
 
-from small_functions import save_model
+from small_functions import *
 
 class Block(nn.Module):
     '''
@@ -37,7 +37,7 @@ class Block(nn.Module):
         return out
 
 
-class Classifier3(nn.Module):
+class Classifier(nn.Module):
     '''
     Three classes classifier
     convolutional layer + fully connected layer + drop out + log softmax layer
@@ -46,7 +46,7 @@ class Classifier3(nn.Module):
     Output log(probabilities of classifying images to each class) values.
     '''
     def __init__(self):
-        super(Classifier3,self).__init__()
+        super(Classifier,self).__init__()
         self.conv1=nn.Sequential(
             nn.Conv2d(1,32,kernel_size=5),
             nn.ReLU(),
@@ -83,7 +83,7 @@ class Classifier3(nn.Module):
 
         return out
 
-def calculate3_accuracy(predicted_labels,target_labels):
+def calculate_accuracy(predicted_labels,target_labels):
     '''
     Return the accuracy
     predicted_labels: the predited values of images
@@ -112,7 +112,7 @@ def validation(model, validation_loader, criterion):
         outputs = model(images)
         validation_loss += criterion(outputs, torch.max(labels,1)[1]).item()
         
-        accuracy += calculate3_accuracy(outputs,labels)
+        accuracy += calculate_accuracy(outputs,labels)
 
 
     return validation_loss, accuracy
@@ -130,14 +130,12 @@ def train_model(model,train_loader,validation_loader,epochs,loss_function):
         for batch_idx, (images_data, target_labels) in enumerate(train_loader):
             # print(batch_idx, '----------------------')
             target_idx_labels=torch.max(target_labels,1)[1]
-            # print(target_idx_labels)
             # print("image data ",images_data)
             outputs=model(images_data)
             # print("output   ",outputs)
-            
             loss=criterion(outputs,target_idx_labels)
             train_loss_list.append(loss.item())
-            accuracy=calculate3_accuracy(outputs,target_labels)
+            accuracy=calculate_accuracy(outputs,target_labels)
             train_accuracy_list.append(accuracy)
             # print(train_accuracy_list)
             # print("loss ", training_loss_list)
