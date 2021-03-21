@@ -11,7 +11,9 @@ This is a project to propose, train and evaluate a Deep Learning model, which at
 3. Matplotlib 
     * version: 3.2.2
 4. Time
-5. Numpy
+5. Datetime
+6. Numpy
+7. Pandas
 # 
 ## To retrain the models from scratch
 `Click Run all from mainCode.ipynb `
